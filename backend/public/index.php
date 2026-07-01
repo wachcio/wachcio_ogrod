@@ -7,6 +7,9 @@ require __DIR__ . '/../src/autoload.php';
 use App\Controllers\AuthController;
 use App\Controllers\BedController;
 use App\Controllers\GardenController;
+use App\Controllers\PlantingController;
+use App\Controllers\SpeciesController;
+use App\Controllers\VarietyController;
 use App\Router;
 
 // Frontend (Vite dev server) i backend siedzą na różnych portach, więc każdy
@@ -55,8 +58,25 @@ $router->delete('/gardens/{id}', [$gardens, 'destroy']);
 $beds = new BedController();
 $router->get('/gardens/{gardenId}/beds', [$beds, 'index']);
 $router->post('/gardens/{gardenId}/beds', [$beds, 'create']);
+$router->get('/beds/{id}', [$beds, 'show']);
 $router->put('/beds/{id}', [$beds, 'update']);
 $router->delete('/beds/{id}', [$beds, 'destroy']);
+
+$species = new SpeciesController();
+$router->get('/species', [$species, 'index']);
+$router->post('/species', [$species, 'create']);
+$router->put('/species/{id}', [$species, 'update']);
+$router->delete('/species/{id}', [$species, 'destroy']);
+
+$varieties = new VarietyController();
+$router->get('/species/{speciesId}/varieties', [$varieties, 'index']);
+$router->post('/species/{speciesId}/varieties', [$varieties, 'create']);
+$router->delete('/varieties/{id}', [$varieties, 'destroy']);
+
+$plantings = new PlantingController();
+$router->get('/beds/{bedId}/plantings', [$plantings, 'index']);
+$router->post('/beds/{bedId}/plantings', [$plantings, 'create']);
+$router->delete('/plantings/{id}', [$plantings, 'destroy']);
 
 // Wszystkie trasy backendu są pod /api - ścinamy ten prefiks przed dopasowaniem
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';

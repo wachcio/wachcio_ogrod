@@ -1,14 +1,20 @@
+import { GridLines } from '../../components/GridLines'
 import type { Bed } from '../gardens/types'
 
 const PADDING_CM = 30
 const GRID_STEP_CM = 50
+
+interface GardenCanvasProps {
+  beds: Bed[]
+  onBedClick?: (bed: Bed) => void
+}
 
 // Grządki rysujemy w skali rzeczywistej: viewBox SVG ustawiamy wprost w
 // centymetrach (0 0 width height), więc <rect x={pos_x_cm} width={width_cm}>
 // automatycznie zachowuje właściwe proporcje - SVG samo przeskalowuje te
 // "jednostki użytkownika" do rzeczywistych pikseli w przeglądarce. Dzięki
 // temu nie musimy ręcznie liczyć mnożnika cm->px.
-export function GardenCanvas({ beds }: { beds: Bed[] }) {
+export function GardenCanvas({ beds, onBedClick }: GardenCanvasProps) {
   if (beds.length === 0) {
     return <p className="canvas-empty">Dodaj pierwszą grządkę, żeby zobaczyć plan ogrodu.</p>
   }
@@ -20,7 +26,7 @@ export function GardenCanvas({ beds }: { beds: Bed[] }) {
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="garden-canvas" role="img" aria-label="Plan ogrodu">
-      <GridLines width={width} height={height} />
+      <GridLines width={width} height={height} step={GRID_STEP_CM} />
       {beds.map((bed) => {
         const x = Number(bed.pos_x_cm)
         const y = Number(bed.pos_y_cm)
@@ -31,7 +37,12 @@ export function GardenCanvas({ beds }: { beds: Bed[] }) {
         const cy = y + h / 2
 
         return (
-          <g key={bed.id} transform={rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined}>
+          <g
+            key={bed.id}
+            transform={rotation ? `rotate(${rotation} ${cx} ${cy})` : undefined}
+            onClick={onBedClick ? () => onBedClick(bed) : undefined}
+            className={onBedClick ? 'bed-group clickable' : 'bed-group'}
+          >
             <rect x={x} y={y} width={w} height={h} rx={2} className="bed-rect" />
             <text x={cx} y={cy - 2} textAnchor="middle" className="bed-label">
               {bed.name}
@@ -43,24 +54,5 @@ export function GardenCanvas({ beds }: { beds: Bed[] }) {
         )
       })}
     </svg>
-  )
-}
-
-function GridLines({ width, height }: { width: number; height: number }) {
-  const verticalLines = []
-  for (let x = 0; x <= width; x += GRID_STEP_CM) {
-    verticalLines.push(<line key={`v-${x}`} x1={x} y1={0} x2={x} y2={height} className="grid-line" />)
-  }
-
-  const horizontalLines = []
-  for (let y = 0; y <= height; y += GRID_STEP_CM) {
-    horizontalLines.push(<line key={`h-${y}`} x1={0} y1={y} x2={width} y2={y} className="grid-line" />)
-  }
-
-  return (
-    <>
-      {verticalLines}
-      {horizontalLines}
-    </>
   )
 }

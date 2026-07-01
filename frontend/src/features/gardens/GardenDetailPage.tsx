@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../api/client'
 import { BedForm, type BedFormValues } from '../gardenCanvas/BedForm'
 import { GardenCanvas } from '../gardenCanvas/GardenCanvas'
@@ -7,6 +7,7 @@ import type { Bed, Garden } from './types'
 
 export function GardenDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [garden, setGarden] = useState<Garden | null>(null)
   const [beds, setBeds] = useState<Bed[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -68,7 +69,7 @@ export function GardenDetailPage() {
         </div>
       </header>
 
-      <GardenCanvas beds={beds} />
+      <GardenCanvas beds={beds} onBedClick={(bed) => navigate(`/gardens/${id}/beds/${bed.id}`)} />
 
       <section>
         <h2>Grządki</h2>
@@ -88,6 +89,9 @@ export function GardenDetailPage() {
                   {bed.name} — {bed.width_cm}×{bed.length_cm} cm
                 </span>
                 <span className="bed-list-actions">
+                  <button type="button" onClick={() => navigate(`/gardens/${id}/beds/${bed.id}`)}>
+                    Sadź rośliny
+                  </button>
                   <button type="button" className="secondary" onClick={() => setEditingBedId(bed.id)}>
                     Edytuj
                   </button>

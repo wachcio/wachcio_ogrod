@@ -38,6 +38,7 @@ export function GardensListPage() {
       <header className="page-header">
         <h1>Moje ogrody</h1>
         <div className="page-header-actions">
+          <Link to="/species">Biblioteka roślin</Link>
           <span>{user?.name}</span>
           <button type="button" onClick={logout} className="secondary">
             Wyloguj

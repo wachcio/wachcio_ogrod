@@ -4,6 +4,8 @@ import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { RegisterPage } from './features/auth/RegisterPage'
 import { GardenDetailPage } from './features/gardens/GardenDetailPage'
 import { GardensListPage } from './features/gardens/GardensListPage'
+import { BedDetailPage } from './features/plantings/BedDetailPage'
+import { SpeciesLibraryPage } from './features/species/SpeciesLibraryPage'
 
 function App() {
   return (
@@ -23,6 +25,22 @@ function App() {
         element={
           <ProtectedRoute>
             <GardenDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/gardens/:gardenId/beds/:bedId"
+        element={
+          <ProtectedRoute>
+            <BedDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/species"
+        element={
+          <ProtectedRoute>
+            <SpeciesLibraryPage />
           </ProtectedRoute>
         }
       />

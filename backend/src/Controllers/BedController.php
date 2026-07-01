@@ -30,6 +30,20 @@ class BedController
         echo json_encode(['beds' => $stmt->fetchAll()]);
     }
 
+    public function show(array $params): void
+    {
+        $userId = Auth::requireUserId();
+        $bed = $this->findOwnedBed((int) $params['id'], $userId);
+
+        if (!$bed) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Nie znaleziono grządki']);
+            return;
+        }
+
+        echo json_encode(['bed' => $bed]);
+    }
+
     public function create(array $params): void
     {
         $userId = Auth::requireUserId();
