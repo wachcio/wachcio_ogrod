@@ -1,0 +1,17 @@
+# środowisko
+.env
+.env.local
+
+# backend (PHP)
+backend/vendor/
+backend/public/uploads/
+
+# frontend (Node/Vite)
+frontend/node_modules/
+frontend/dist/
+
+# edytory/systemowe
+.vscode/
+.idea/
+.DS_Store
+*.log

@@ -1,0 +1,250 @@
+:root {
+  --text: #2b2b23;
+  --bg: #fbfbf6;
+  --border: #d7d9c8;
+  --accent: #3f7d3a;
+  --accent-hover: #2f5e2c;
+  --danger: #b3402a;
+  --card-bg: #ffffff;
+
+  font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h1 {
+  font-size: 28px;
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 20px;
+  margin: 24px 0 12px;
+}
+
+a {
+  color: var(--accent);
+}
+
+button {
+  font: inherit;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--accent-hover);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+button.danger {
+  background: var(--danger);
+}
+
+input {
+  font: inherit;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.page-status {
+  color: #6b6b5c;
+}
+
+.form-error {
+  color: var(--danger);
+  margin: 0;
+}
+
+/* Auth */
+.auth-page {
+  max-width: 360px;
+  margin: 48px auto;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+/* Layout ogólny */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.inline-form input {
+  flex: 1;
+  min-width: 160px;
+}
+
+/* Lista ogrodów */
+.garden-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.garden-list li {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+
+.garden-description {
+  margin: 4px 0 0;
+  color: #6b6b5c;
+  font-size: 14px;
+}
+
+/* Grządki */
+.bed-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.bed-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bed-list-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bed-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  max-width: 480px;
+}
+
+.bed-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.bed-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Wizualizacja ogrodu (SVG w skali cm) */
+.garden-canvas {
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  background: #eef3e6;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.canvas-empty {
+  padding: 24px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: #6b6b5c;
+}
+
+.grid-line {
+  stroke: #d7ded0;
+  stroke-width: 0.5;
+}
+
+.bed-rect {
+  fill: #c8e6c9;
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+
+.bed-label {
+  font-size: 6px;
+  fill: #1b1b1b;
+  font-weight: 600;
+}
+
+.bed-dimensions {
+  font-size: 4px;
+  fill: #55564a;
+}
+
+@media (max-width: 600px) {
+  .bed-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
