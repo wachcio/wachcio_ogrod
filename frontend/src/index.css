@@ -414,6 +414,29 @@ button.small {
   flex: 1;
 }
 
+.rotation-warning {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  margin: 16px 0;
+  border: 1px solid #e0b84a;
+  background: #fdf3d8;
+  border-radius: 8px;
+  color: #6b5522;
+}
+
+.history-year-group {
+  margin-bottom: 16px;
+}
+
+.history-year-group h3 {
+  font-size: 15px;
+  margin: 0 0 8px;
+  color: #6b6b5c;
+}
+
 @media (max-width: 600px) {
   .bed-form-grid {
     grid-template-columns: 1fr;

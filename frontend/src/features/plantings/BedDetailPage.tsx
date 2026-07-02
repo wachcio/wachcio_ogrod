@@ -18,6 +18,7 @@ export function BedDetailPage() {
 
   const [mode, setMode] = useState<Mode>('idle')
   const [draft, setDraft] = useState<PlantingDraft | null>(null)
+  const [rotationWarning, setRotationWarning] = useState<string | null>(null)
 
   useEffect(() => {
     if (!bedId) return
@@ -42,6 +43,7 @@ export function BedDetailPage() {
   function startMode(next: Mode) {
     setMode(next)
     setDraft(null)
+    setRotationWarning(null)
   }
 
   function handleCanvasClick(x: number, y: number) {
@@ -74,9 +76,10 @@ export function BedDetailPage() {
         ? { type: 'point', x_cm: draft.x, y_cm: draft.y, ...values }
         : { type: 'row', x_cm: draft.x, y_cm: draft.y, x2_cm: draft.x2, y2_cm: draft.y2, ...values }
 
-    await api.post(`/beds/${bedId}/plantings`, payload)
+    const result = await api.post<{ planting: Planting; warning: string | null }>(`/beds/${bedId}/plantings`, payload)
     setMode('idle')
     setDraft(null)
+    setRotationWarning(result.warning)
     loadData(bedId)
   }
 
@@ -106,6 +109,15 @@ export function BedDetailPage() {
           </p>
         </div>
       </header>
+
+      {rotationWarning && (
+        <div className="rotation-warning">
+          <span>⚠️ {rotationWarning}</span>
+          <button type="button" className="secondary small" onClick={() => setRotationWarning(null)}>
+            Zamknij
+          </button>
+        </div>
+      )}
 
       <div className="planting-toolbar">
         <button type="button" className={mode === 'point' ? '' : 'secondary'} onClick={() => startMode('point')}>
@@ -141,24 +153,50 @@ export function BedDetailPage() {
       )}
 
       <section>
-        <h2>Nasadzenia</h2>
+        <h2>Historia grządki</h2>
         {plantings.length === 0 && <p className="page-status">Brak nasadzeń na tej grządce.</p>}
-        <ul className="planting-list">
-          {plantings.map((planting) => (
-            <li key={planting.id} className="planting-list-item">
-              <span className="species-color-dot" style={{ background: planting.species_color }} />
-              <span>
-                {planting.species_name}
-                {planting.variety_name ? ` (${planting.variety_name})` : ''} —{' '}
-                {planting.type === 'point' ? 'punkt' : 'rząd'}
-              </span>
-              <button type="button" className="danger small" onClick={() => handleDeletePlanting(planting.id)}>
-                Usuń
-              </button>
-            </li>
-          ))}
-        </ul>
+        {groupByYear(plantings).map(([year, group]) => (
+          <div key={year} className="history-year-group">
+            <h3>{year}</h3>
+            <ul className="planting-list">
+              {group.map((planting) => (
+                <li key={planting.id} className="planting-list-item">
+                  <span className="species-color-dot" style={{ background: planting.species_color }} />
+                  <span>
+                    {planting.species_name}
+                    {planting.variety_name ? ` (${planting.variety_name})` : ''}
+                    {planting.species_family ? ` — ${planting.species_family}` : ''} —{' '}
+                    {planting.type === 'point' ? 'punkt' : 'rząd'}
+                  </span>
+                  <button type="button" className="danger small" onClick={() => handleDeletePlanting(planting.id)}>
+                    Usuń
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </section>
     </div>
   )
+}
+
+// Grupuje nasadzenia wg roku wyciągniętego z planted_date (albo "Bez daty"),
+// malejąco - to najprostszy sposób pokazania historii grządki bez osobnej
+// encji "sezon" w bazie (patrz POSTEP.md - świadome uproszczenie).
+function groupByYear(plantings: Planting[]): [string, Planting[]][] {
+  const groups = new Map<string, Planting[]>()
+
+  for (const planting of plantings) {
+    const year = planting.planted_date ? planting.planted_date.slice(0, 4) : 'Bez daty'
+    const existing = groups.get(year) ?? []
+    existing.push(planting)
+    groups.set(year, existing)
+  }
+
+  return Array.from(groups.entries()).sort(([a], [b]) => {
+    if (a === 'Bez daty') return 1
+    if (b === 'Bez daty') return -1
+    return b.localeCompare(a)
+  })
 }

@@ -15,6 +15,7 @@ export interface Planting {
   notes: string | null
   species_name: string
   species_color: string
+  species_family: string | null
   variety_name: string | null
 }
 

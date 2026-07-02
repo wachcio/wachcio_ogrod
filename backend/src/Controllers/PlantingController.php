@@ -9,6 +9,8 @@ use App\Db;
 
 class PlantingController
 {
+    private const ROTATION_WINDOW_MONTHS = 24;
+
     public function index(array $params): void
     {
         $userId = Auth::requireUserId();
@@ -22,7 +24,7 @@ class PlantingController
 
         $db = Db::connection();
         $stmt = $db->prepare(
-            'SELECT p.*, s.name AS species_name, s.color AS species_color, v.name AS variety_name
+            'SELECT p.*, s.name AS species_name, s.color AS species_color, s.family AS species_family, v.name AS variety_name
              FROM plantings p
              JOIN plant_species s ON s.id = p.species_id
              LEFT JOIN plant_varieties v ON v.id = p.variety_id
@@ -55,6 +57,8 @@ class PlantingController
             return;
         }
 
+        $warning = $this->checkRotationWarning($bedId, $values['species_id']);
+
         $db = Db::connection();
         $stmt = $db->prepare(
             'INSERT INTO plantings (bed_id, species_id, variety_id, type, x_cm, y_cm, x2_cm, y2_cm, spacing_cm, planted_date, notes)
@@ -75,7 +79,49 @@ class PlantingController
         ]);
 
         http_response_code(201);
-        echo json_encode(['planting' => $this->findPlanting((int) $db->lastInsertId())]);
+        echo json_encode([
+            'planting' => $this->findPlanting((int) $db->lastInsertId()),
+            'warning' => $warning,
+        ]);
+    }
+
+    // Ostrzeżenie o płodozmianie: sprawdza, czy na tej samej grządce
+    // niedawno (ROTATION_WINDOW_MONTHS wstecz) rosła już roślina z tej
+    // samej rodziny botanicznej. To tylko podpowiedź, nigdy nie blokuje
+    // zapisu - sadzenie tego samego gatunku dwa razy pod rząd bywa
+    // celowe (np. testowanie odmian), więc decyzję zostawiamy użytkownikowi.
+    private function checkRotationWarning(int $bedId, int $newSpeciesId): ?string
+    {
+        $db = Db::connection();
+
+        $stmt = $db->prepare('SELECT family FROM plant_species WHERE id = ?');
+        $stmt->execute([$newSpeciesId]);
+        $family = $stmt->fetchColumn();
+
+        if (!$family) {
+            return null;
+        }
+
+        $cutoff = (new \DateTimeImmutable())->modify('-' . self::ROTATION_WINDOW_MONTHS . ' months')->format('Y-m-d');
+
+        $stmt = $db->prepare(
+            'SELECT p.planted_date, s.name AS species_name
+             FROM plantings p
+             JOIN plant_species s ON s.id = p.species_id
+             WHERE p.bed_id = ? AND s.family = ? AND (p.planted_date IS NULL OR p.planted_date >= ?)
+             ORDER BY p.planted_date IS NULL ASC, p.planted_date DESC
+             LIMIT 1'
+        );
+        $stmt->execute([$bedId, $family, $cutoff]);
+        $previous = $stmt->fetch();
+
+        if (!$previous) {
+            return null;
+        }
+
+        $when = $previous['planted_date'] ? " ({$previous['planted_date']})" : '';
+
+        return "Na tej grządce rosła już roślina z rodziny \"{$family}\" ({$previous['species_name']}{$when}) - rozważ płodozmian.";
     }
 
     public function destroy(array $params): void
@@ -217,7 +263,7 @@ class PlantingController
     {
         $db = Db::connection();
         $stmt = $db->prepare(
-            'SELECT p.*, s.name AS species_name, s.color AS species_color, v.name AS variety_name
+            'SELECT p.*, s.name AS species_name, s.color AS species_color, s.family AS species_family, v.name AS variety_name
              FROM plantings p
              JOIN plant_species s ON s.id = p.species_id
              LEFT JOIN plant_varieties v ON v.id = p.variety_id
