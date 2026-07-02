@@ -26,7 +26,7 @@ export function PlantingForm({ draft, species, onSubmit, onCancel }: PlantingFor
   const [varieties, setVarieties] = useState<Variety[]>([])
   const [varietyId, setVarietyId] = useState<number | ''>('')
   const [spacingCm, setSpacingCm] = useState('30')
-  const [plantedDate, setPlantedDate] = useState('')
+  const [plantedDate, setPlantedDate] = useState(todayIsoDate)
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -141,4 +141,14 @@ export function PlantingForm({ draft, species, onSubmit, onCancel }: PlantingFor
       </div>
     </form>
   )
+}
+
+// Data lokalna (nie UTC) w formacie oczekiwanym przez <input type="date"> -
+// najczęściej sadzi się "dziś", więc to sensowna wartość startowa formularza.
+function todayIsoDate(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }

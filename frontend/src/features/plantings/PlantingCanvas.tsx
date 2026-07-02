@@ -6,6 +6,7 @@ import type { Planting, PlantingDraft } from './types'
 
 const PADDING_CM = 15
 const GRID_STEP_CM = 25
+const MIN_SNAP_CM = 1
 
 interface PlantingCanvasProps {
   bed: Bed
@@ -99,11 +100,17 @@ function toLocalPoint(
   const transformed = point.matrixTransform(ctm.inverse())
   const x = clamp(transformed.x - PADDING_CM, 0, width)
   const y = clamp(transformed.y - PADDING_CM, 0, height)
-  return { x: round1(x), y: round1(y) }
+  return { x: snapToGrid(x), y: snapToGrid(y) }
 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
+}
+
+// Sadzenie ma minimalną rozdzielczość 1cm - klik przyciąga się do najbliższego
+// pełnego centymetra zamiast zapisywać ułamkowe współrzędne.
+function snapToGrid(value: number): number {
+  return Math.round(value / MIN_SNAP_CM) * MIN_SNAP_CM
 }
 
 function round1(value: number): number {
@@ -195,7 +202,7 @@ function CursorPosition({ x, y, width, height }: { x: number; y: number; width: 
       <line x1={0} y1={y} x2={width} y2={y} className="cursor-guide" />
       <circle cx={x} cy={y} r={1.2} className="cursor-dot" />
       <text x={labelX} y={labelY} textAnchor={nearRight ? 'end' : 'start'} className="cursor-label">
-        {round1(x)} × {round1(y)} cm
+        {x} × {y} cm
       </text>
     </g>
   )
