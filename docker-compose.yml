@@ -23,7 +23,7 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      FRONTEND_ORIGIN: http://localhost:5173
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
     ports:
       - "8080:80"
     depends_on:
@@ -36,7 +36,7 @@ services:
       - ./frontend:/app
     command: sh -c "npm install && npm run dev -- --host"
     environment:
-      VITE_API_URL: http://localhost:8080/api
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
     ports:
       - "5173:5173"
     depends_on:
