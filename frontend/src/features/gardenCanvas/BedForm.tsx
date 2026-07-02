@@ -21,7 +21,7 @@ interface BedFormProps {
 export function BedForm({ initialBed, onSubmit, onCancel }: BedFormProps) {
   const [name, setName] = useState(initialBed?.name ?? '')
   const [widthCm, setWidthCm] = useState(String(initialBed?.width_cm ?? '100'))
-  const [lengthCm, setLengthCm] = useState(String(initialBed?.length_cm ?? '100'))
+  const [lengthCm, setLengthCm] = useState(String(initialBed?.length_cm ?? '200'))
   const [posXCm, setPosXCm] = useState(String(initialBed?.pos_x_cm ?? '0'))
   const [posYCm, setPosYCm] = useState(String(initialBed?.pos_y_cm ?? '0'))
   const [error, setError] = useState<string | null>(null)
@@ -51,7 +51,7 @@ export function BedForm({ initialBed, onSubmit, onCancel }: BedFormProps) {
       if (!initialBed) {
         setName('')
         setWidthCm('100')
-        setLengthCm('100')
+        setLengthCm('200')
         setPosXCm('0')
         setPosYCm('0')
       }

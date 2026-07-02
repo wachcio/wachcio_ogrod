@@ -393,6 +393,40 @@ button.small {
 .planting-dot {
   stroke: #1b1b1b;
   stroke-width: 0.3;
+  cursor: pointer;
+}
+
+.cursor-guide {
+  stroke: #8a8c78;
+  stroke-width: 0.3;
+  stroke-dasharray: 1 1.5;
+  opacity: 0.6;
+}
+
+.cursor-dot {
+  fill: var(--accent);
+}
+
+.cursor-label {
+  font-size: 4px;
+  font-weight: 600;
+  fill: #1b1b1b;
+}
+
+.tooltip-box {
+  fill: #1b1b1b;
+  opacity: 0.9;
+}
+
+.tooltip-title {
+  font-size: 4px;
+  font-weight: 600;
+  fill: #fff;
+}
+
+.tooltip-line {
+  font-size: 3.5px;
+  fill: #d7ded0;
 }
 
 .planting-draft {
