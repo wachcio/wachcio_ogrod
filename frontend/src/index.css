@@ -122,6 +122,19 @@ label {
   gap: 12px;
 }
 
+/* Eksport / import danych */
+.data-section {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.data-section h2 {
+  margin-top: 0;
+}
+
 .inline-form {
   display: flex;
   flex-wrap: wrap;

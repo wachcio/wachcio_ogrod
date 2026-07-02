@@ -6,7 +6,9 @@ require __DIR__ . '/../src/autoload.php';
 
 use App\Controllers\AuthController;
 use App\Controllers\BedController;
+use App\Controllers\ExportController;
 use App\Controllers\GardenController;
+use App\Controllers\ImportController;
 use App\Controllers\PlantingController;
 use App\Controllers\SpeciesController;
 use App\Controllers\VarietyController;
@@ -77,6 +79,12 @@ $plantings = new PlantingController();
 $router->get('/beds/{bedId}/plantings', [$plantings, 'index']);
 $router->post('/beds/{bedId}/plantings', [$plantings, 'create']);
 $router->delete('/plantings/{id}', [$plantings, 'destroy']);
+
+$export = new ExportController();
+$router->get('/export', [$export, 'export']);
+
+$import = new ImportController();
+$router->post('/import', [$import, 'import']);
 
 // Wszystkie trasy backendu są pod /api - ścinamy ten prefiks przed dopasowaniem
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { LoginPage } from './features/auth/LoginPage'
 import { ProtectedRoute } from './features/auth/ProtectedRoute'
 import { RegisterPage } from './features/auth/RegisterPage'
+import { DataPage } from './features/data/DataPage'
 import { GardenDetailPage } from './features/gardens/GardenDetailPage'
 import { GardensListPage } from './features/gardens/GardensListPage'
 import { BedDetailPage } from './features/plantings/BedDetailPage'
@@ -41,6 +42,14 @@ function App() {
         element={
           <ProtectedRoute>
             <SpeciesLibraryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dane"
+        element={
+          <ProtectedRoute>
+            <DataPage />
           </ProtectedRoute>
         }
       />

@@ -55,12 +55,19 @@ Otwórz `http://localhost:5173`. Plik `.env` (hasła do bazy) już istnieje loka
 - Najechanie na posadzoną roślinkę pokazuje własny dymek ze szczegółami (odmiana, rodzina botaniczna, odstęp w rzędzie, data posadzenia, notatka) zamiast wcześniejszej natywnej etykiety przeglądarki z samą nazwą gatunku.
 - Też zmiany czysto frontendowe, bez migracji.
 
+### Eksport / import danych do JSON (commit jeszcze nie utworzony w tej sesji)
+- Nowy `GET /api/export` (`backend/src/Controllers/ExportController.php`) zwraca cały komplet danych zalogowanego użytkownika: jego ogrody → grządki → nasadzenia, oraz jego własne gatunki/odmiany (systemowych, współdzielonych `owner_id IS NULL`, celowo nie eksportujemy — odtwarzają się z seeda w każdej instalacji).
+- Nowy `POST /api/import` (`backend/src/Controllers/ImportController.php`) przyjmuje ten sam JSON i **dokłada** dane do konta aktualnie zalogowanego użytkownika w jednej transakcji PDO (pierwsze użycie transakcji w tym backendzie) — nie nadpisuje ani nie scala z istniejącymi danymi, więc powtórny import tego samego pliku podwoi dane (świadome uproszczenie, brak wykrywania duplikatów).
+- Odwołania do gatunku/odmiany przy nasadzeniu/odmianie eksportowane są jako `{kind: "owned", id}` (odtwarzane przez mapowanie starych id z pliku na nowo nadane id przy imporcie) albo `{kind: "system", name}` (odnajdywane po nazwie w bazie docelowej, bo systemowe id z seeda nie muszą się zgadzać między instalacjami) — to jedyny nietrywialny element importu.
+- Frontend: nowa strona `/dane` (`frontend/src/features/data/DataPage.tsx`, link z `GardensListPage`) — przycisk "Pobierz plik JSON" buduje Blob i pobiera plik w przeglądarce (bez zmian w `api/client.ts`, bo eksport to zwykły JSON), oraz `<input type="file">` do importu z potwierdzeniem przed wysłaniem i podsumowaniem liczby zaimportowanych rekordów.
+- Bez nowej migracji SQL — korzysta z istniejącego schematu.
+
 ## Do zrobienia (kolejne kamienie milowe)
 
 4. Sąsiedztwo roślin (companion planting) — ostrzeżenia o dobrym/złym sąsiedztwie
 5. Notatki i zdjęcia przy grządce/roślinie
 6. Kalendarz siewu/zbiorów
-7. Eksport/import danych (JSON, PDF/obraz planu)
+7. Eksport/import planu jako PDF/obraz (JSON już zrobiony — patrz wyżej)
 8. Dopracowanie responsywności mobilnej
 
 ## Znane ograniczenia środowiska pracy
