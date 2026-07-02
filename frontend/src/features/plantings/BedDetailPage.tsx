@@ -19,6 +19,8 @@ export function BedDetailPage() {
   const [mode, setMode] = useState<Mode>('idle')
   const [draft, setDraft] = useState<PlantingDraft | null>(null)
   const [rotationWarning, setRotationWarning] = useState<string | null>(null)
+  const [editingPlanting, setEditingPlanting] = useState<Planting | null>(null)
+  const [highlightedId, setHighlightedId] = useState<number | null>(null)
 
   useEffect(() => {
     if (!bedId) return
@@ -44,6 +46,13 @@ export function BedDetailPage() {
     setMode(next)
     setDraft(null)
     setRotationWarning(null)
+    setEditingPlanting(null)
+  }
+
+  function startEditing(planting: Planting) {
+    setEditingPlanting(planting)
+    setMode('idle')
+    setDraft(null)
   }
 
   function handleCanvasClick(x: number, y: number) {
@@ -80,6 +89,13 @@ export function BedDetailPage() {
     setMode('idle')
     setDraft(null)
     setRotationWarning(result.warning)
+    loadData(bedId)
+  }
+
+  async function handleUpdatePlanting(values: PlantingFormValues) {
+    if (!bedId || !editingPlanting) return
+    await api.put(`/plantings/${editingPlanting.id}`, values)
+    setEditingPlanting(null)
     loadData(bedId)
   }
 
@@ -146,10 +162,20 @@ export function BedDetailPage() {
         plantings={plantings}
         draft={draft}
         onCanvasClick={mode !== 'idle' ? handleCanvasClick : undefined}
+        highlightedId={highlightedId}
       />
 
       {mode !== 'idle' && draft && (
         <PlantingForm draft={draft} species={species} onSubmit={handleSubmitPlanting} onCancel={handleCancelDraft} />
+      )}
+
+      {editingPlanting && (
+        <PlantingForm
+          initialPlanting={editingPlanting}
+          species={species}
+          onSubmit={handleUpdatePlanting}
+          onCancel={() => setEditingPlanting(null)}
+        />
       )}
 
       <section>
@@ -160,7 +186,12 @@ export function BedDetailPage() {
             <h3>{year}</h3>
             <ul className="planting-list">
               {group.map((planting) => (
-                <li key={planting.id} className="planting-list-item">
+                <li
+                  key={planting.id}
+                  className="planting-list-item"
+                  onMouseEnter={() => setHighlightedId(planting.id)}
+                  onMouseLeave={() => setHighlightedId((current) => (current === planting.id ? null : current))}
+                >
                   <span className="species-color-dot" style={{ background: planting.species_color }} />
                   <span>
                     {planting.species_name}
@@ -168,6 +199,9 @@ export function BedDetailPage() {
                     {planting.species_family ? ` — ${planting.species_family}` : ''} —{' '}
                     {planting.type === 'point' ? 'punkt' : 'rząd'}
                   </span>
+                  <button type="button" className="secondary small" onClick={() => startEditing(planting)}>
+                    Edytuj
+                  </button>
                   <button type="button" className="danger small" onClick={() => handleDeletePlanting(planting.id)}>
                     Usuń
                   </button>

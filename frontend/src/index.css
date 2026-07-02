@@ -459,6 +459,18 @@ button.small {
   stroke-dasharray: 1.5;
 }
 
+.row-guide.highlighted {
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+
+.planting-highlight {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 0.8;
+  opacity: 0.85;
+}
+
 .ruler-tick {
   stroke: #8a8c78;
   stroke-width: 0.4;

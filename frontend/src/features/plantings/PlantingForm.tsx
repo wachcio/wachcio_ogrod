@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { api } from '../../api/client'
 import type { Species, Variety } from '../species/types'
-import type { PlantingDraft } from './types'
+import type { Planting, PlantingDraft } from './types'
 
 export interface PlantingFormValues {
   species_id: number
@@ -12,22 +12,27 @@ export interface PlantingFormValues {
 }
 
 interface PlantingFormProps {
-  draft: PlantingDraft
+  draft?: PlantingDraft | null
+  initialPlanting?: Planting
   species: Species[]
   onSubmit: (values: PlantingFormValues) => Promise<void>
   onCancel: () => void
 }
 
-// Formularz pojawia się dopiero gdy draft ma już komplet współrzędnych
-// (punkt albo cały odcinek rzędu) - użytkownik wybiera tu tylko *co* rośnie
-// w miejscu, które przed chwilą wskazał kliknięciem na PlantingCanvas.
-export function PlantingForm({ draft, species, onSubmit, onCancel }: PlantingFormProps) {
-  const [speciesId, setSpeciesId] = useState<number | ''>('')
+// Jeden formularz obsługuje zarówno dodawanie nowego nasadzenia (draft z
+// PlantingCanvas ma już komplet współrzędnych), jak i edycję istniejącego
+// (initialPlanting z historii grządki) - podobnie jak BedForm dla grządek.
+// Edycja nie zmienia geometrii (x/y/x2/y2) - przesunięcie wymagałoby
+// przeciągania na canvasie, którego nie ma; zmienić można gatunek, odmianę,
+// odstęp, datę i notatkę.
+export function PlantingForm({ draft, initialPlanting, species, onSubmit, onCancel }: PlantingFormProps) {
+  const type = initialPlanting?.type ?? draft?.type
+  const [speciesId, setSpeciesId] = useState<number | ''>(initialPlanting?.species_id ?? '')
   const [varieties, setVarieties] = useState<Variety[]>([])
-  const [varietyId, setVarietyId] = useState<number | ''>('')
-  const [spacingCm, setSpacingCm] = useState('30')
-  const [plantedDate, setPlantedDate] = useState(todayIsoDate)
-  const [notes, setNotes] = useState('')
+  const [varietyId, setVarietyId] = useState<number | ''>(initialPlanting?.variety_id ?? '')
+  const [spacingCm, setSpacingCm] = useState(initialPlanting?.spacing_cm ? String(initialPlanting.spacing_cm) : '30')
+  const [plantedDate, setPlantedDate] = useState(initialPlanting?.planted_date ?? todayIsoDate())
+  const [notes, setNotes] = useState(initialPlanting?.notes ?? '')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -37,18 +42,27 @@ export function PlantingForm({ draft, species, onSubmit, onCancel }: PlantingFor
       setVarietyId('')
       return
     }
-    api.get<{ varieties: Variety[] }>(`/species/${speciesId}/varieties`).then((data) => setVarieties(data.varieties))
-    setVarietyId('')
+    api.get<{ varieties: Variety[] }>(`/species/${speciesId}/varieties`).then((data) => {
+      setVarieties(data.varieties)
+      // Przy edycji pierwsze uruchomienie efektu nie powinno zgubić już
+      // zapisanej odmiany - zostawiamy ją, jeśli nadal należy do gatunku.
+      setVarietyId((current) => (current !== '' && data.varieties.some((v) => v.id === current) ? current : ''))
+    })
 
-    // Podpowiadamy odstęp z biblioteki gatunku, żeby nie trzeba było go znać
-    // na pamięć - użytkownik nadal może go ręcznie zmienić.
-    const selected = species.find((s) => s.id === speciesId)
-    if (selected?.spacing_cm) {
-      setSpacingCm(String(selected.spacing_cm))
+    // Podpowiadamy odstęp z biblioteki gatunku tylko przy dodawaniu nowego
+    // nasadzenia - przy edycji nie chcemy nadpisywać już ustawionej wartości.
+    if (!initialPlanting) {
+      const selected = species.find((s) => s.id === speciesId)
+      if (selected?.spacing_cm) {
+        setSpacingCm(String(selected.spacing_cm))
+      }
     }
-  }, [speciesId, species])
+  }, [speciesId, species, initialPlanting])
 
-  const isRowReady = draft.type === 'point' || (draft.x2 !== undefined && draft.y2 !== undefined)
+  const isRowReady =
+    Boolean(initialPlanting) ||
+    type === 'point' ||
+    (draft?.type === 'row' && draft.x2 !== undefined && draft.y2 !== undefined)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -59,7 +73,7 @@ export function PlantingForm({ draft, species, onSubmit, onCancel }: PlantingFor
       return
     }
 
-    if (draft.type === 'row' && Number(spacingCm) <= 0) {
+    if (type === 'row' && Number(spacingCm) <= 0) {
       setError('Podaj dodatni odstęp między roślinami w rzędzie')
       return
     }
@@ -69,12 +83,12 @@ export function PlantingForm({ draft, species, onSubmit, onCancel }: PlantingFor
       await onSubmit({
         species_id: speciesId,
         variety_id: varietyId === '' ? null : varietyId,
-        spacing_cm: draft.type === 'row' ? Number(spacingCm) : undefined,
+        spacing_cm: type === 'row' ? Number(spacingCm) : undefined,
         planted_date: plantedDate || null,
         notes: notes.trim() || null,
       })
     } catch {
-      setError('Nie udało się zapisać nasadzenia')
+      setError(initialPlanting ? 'Nie udało się zapisać zmian' : 'Nie udało się zapisać nasadzenia')
     } finally {
       setIsSubmitting(false)
     }
@@ -112,7 +126,7 @@ export function PlantingForm({ draft, species, onSubmit, onCancel }: PlantingFor
         </label>
       )}
 
-      {draft.type === 'row' && (
+      {type === 'row' && (
         <label>
           Odstęp między roślinami w rzędzie (cm)
           <input type="number" min="1" value={spacingCm} onChange={(e) => setSpacingCm(e.target.value)} required />
@@ -133,7 +147,7 @@ export function PlantingForm({ draft, species, onSubmit, onCancel }: PlantingFor
 
       <div className="bed-form-actions">
         <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Zapisywanie…' : 'Zapisz nasadzenie'}
+          {isSubmitting ? 'Zapisywanie…' : initialPlanting ? 'Zapisz zmiany' : 'Zapisz nasadzenie'}
         </button>
         <button type="button" className="secondary" onClick={onCancel}>
           Anuluj

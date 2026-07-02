@@ -78,6 +78,7 @@ $router->delete('/varieties/{id}', [$varieties, 'destroy']);
 $plantings = new PlantingController();
 $router->get('/beds/{bedId}/plantings', [$plantings, 'index']);
 $router->post('/beds/{bedId}/plantings', [$plantings, 'create']);
+$router->put('/plantings/{id}', [$plantings, 'update']);
 $router->delete('/plantings/{id}', [$plantings, 'destroy']);
 
 $export = new ExportController();

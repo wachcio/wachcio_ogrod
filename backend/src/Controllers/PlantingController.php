@@ -124,6 +124,63 @@ class PlantingController
         return "Na tej grządce rosła już roślina z rodziny \"{$family}\" ({$previous['species_name']}{$when}) - rozważ płodozmian.";
     }
 
+    // Edycja zmienia tylko gatunek/odmianę/odstęp/datę/notatkę - nie
+    // geometrię (x/y/x2/y2). Przesunięcie nasadzenia wymagałoby
+    // przeciągania na canvasie, którego jeszcze nie ma - żeby to zrobić,
+    // trzeba dziś usunąć nasadzenie i dodać je ponownie w nowym miejscu.
+    public function update(array $params): void
+    {
+        $userId = Auth::requireUserId();
+        $planting = $this->findOwnedPlanting((int) $params['id'], $userId);
+
+        if (!$planting) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Nie znaleziono nasadzenia']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        $speciesId = isset($data['species_id']) ? (int) $data['species_id'] : (int) $planting['species_id'];
+        if (!$this->isSpeciesVisible($speciesId, $userId)) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Nie znaleziono wybranego gatunku']);
+            return;
+        }
+
+        if (array_key_exists('variety_id', $data)) {
+            $varietyId = $data['variety_id'] !== null && $data['variety_id'] !== '' ? (int) $data['variety_id'] : null;
+        } else {
+            $varietyId = $planting['variety_id'] !== null ? (int) $planting['variety_id'] : null;
+        }
+        if ($varietyId !== null && !$this->isVarietyVisible($varietyId, $speciesId, $userId)) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Nie znaleziono wybranej odmiany dla tego gatunku']);
+            return;
+        }
+
+        $spacing = $planting['spacing_cm'];
+        if ($planting['type'] === 'row') {
+            $spacing = array_key_exists('spacing_cm', $data) ? (float) $data['spacing_cm'] : (float) $planting['spacing_cm'];
+            if ($spacing <= 0) {
+                http_response_code(422);
+                echo json_encode(['error' => 'Dla rzędu wymagany jest dodatni odstęp spacing_cm']);
+                return;
+            }
+        }
+
+        $plantedDate = array_key_exists('planted_date', $data) ? $data['planted_date'] : $planting['planted_date'];
+        $notes = array_key_exists('notes', $data) ? $data['notes'] : $planting['notes'];
+
+        $db = Db::connection();
+        $stmt = $db->prepare(
+            'UPDATE plantings SET species_id = ?, variety_id = ?, spacing_cm = ?, planted_date = ?, notes = ? WHERE id = ?'
+        );
+        $stmt->execute([$speciesId, $varietyId, $spacing, $plantedDate, $notes, $planting['id']]);
+
+        echo json_encode(['planting' => $this->findPlanting((int) $planting['id'])]);
+    }
+
     public function destroy(array $params): void
     {
         $userId = Auth::requireUserId();

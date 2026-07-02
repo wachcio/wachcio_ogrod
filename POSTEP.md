@@ -62,6 +62,13 @@ Otwórz `http://localhost:5173`. Plik `.env` (hasła do bazy) już istnieje loka
 - Frontend: nowa strona `/dane` (`frontend/src/features/data/DataPage.tsx`, link z `GardensListPage`) — przycisk "Pobierz plik JSON" buduje Blob i pobiera plik w przeglądarce (bez zmian w `api/client.ts`, bo eksport to zwykły JSON), oraz `<input type="file">` do importu z potwierdzeniem przed wysłaniem i podsumowaniem liczby zaimportowanych rekordów.
 - Bez nowej migracji SQL — korzysta z istniejącego schematu.
 
+### Jednolite kropki, podświetlanie z historii, edycja nasadzenia (commit jeszcze nie utworzony w tej sesji)
+- `PlantingCanvas`: punkt i kropki rzędu mają teraz ten sam promień (`DOT_RADIUS = 2`) — wcześniej punkt (r=2.5) był zauważalnie większy niż kropki w rzędzie (r=2).
+- Najechanie myszą na pozycję w "Historia grządki" (`BedDetailPage.tsx`) podświetla odpowiadające jej nasadzenie na planie SVG (pierścień wokół kropki/pogrubiona linia rzędu, kolor `--accent`) — nowy prop `highlightedId` na `PlantingCanvas`.
+- Nowy przycisk "Edytuj" przy każdym nasadzeniu w historii otwiera `PlantingForm` w trybie edycji (nowy opcjonalny prop `initialPlanting`, ten sam formularz co przy dodawaniu — analogicznie do `BedForm`/`initialBed`). Edycja zmienia gatunek/odmianę/odstęp/datę/notatkę, ale nie geometrię (przesunięcie = usuń i dodaj ponownie, bo nie ma jeszcze przeciągania na canvasie).
+- Backend: nowy `PUT /api/plantings/{id}` (`PlantingController::update`).
+- Bez nowej migracji SQL.
+
 ## Do zrobienia (kolejne kamienie milowe)
 
 4. Sąsiedztwo roślin (companion planting) — ostrzeżenia o dobrym/złym sąsiedztwie

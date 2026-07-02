@@ -13,6 +13,7 @@ interface PlantingCanvasProps {
   plantings: Planting[]
   draft?: PlantingDraft | null
   onCanvasClick?: (x: number, y: number) => void
+  highlightedId?: number | null
 }
 
 interface HoverInfo {
@@ -26,7 +27,7 @@ interface HoverInfo {
 // viewBox (czyli cm) przez odwrotność macierzy transformacji SVG
 // (getScreenCTM().inverse()) - to standardowy sposób na "hit testing" we
 // współrzędnych SVG w przeglądarce.
-export function PlantingCanvas({ bed, plantings, draft, onCanvasClick }: PlantingCanvasProps) {
+export function PlantingCanvas({ bed, plantings, draft, onCanvasClick, highlightedId }: PlantingCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
   const [hover, setHover] = useState<HoverInfo | null>(null)
@@ -71,6 +72,7 @@ export function PlantingCanvas({ bed, plantings, draft, onCanvasClick }: Plantin
           <PlantingShape
             key={planting.id}
             planting={planting}
+            highlighted={planting.id === highlightedId}
             onHover={(x, y) => setHover({ planting, x, y })}
             onHoverEnd={() => setHover(null)}
           />
@@ -138,12 +140,16 @@ function computeRowPoints(x: number, y: number, x2: number, y2: number, spacing:
   return points
 }
 
+const DOT_RADIUS = 2
+
 function PlantingShape({
   planting,
+  highlighted,
   onHover,
   onHoverEnd,
 }: {
   planting: Planting
+  highlighted: boolean
   onHover: (x: number, y: number) => void
   onHoverEnd: () => void
 }) {
@@ -152,15 +158,18 @@ function PlantingShape({
 
   if (planting.type === 'point') {
     return (
-      <circle
-        cx={x}
-        cy={y}
-        r={2.5}
-        className="planting-dot"
-        style={{ fill: planting.species_color }}
-        onMouseEnter={() => onHover(x, y)}
-        onMouseLeave={onHoverEnd}
-      />
+      <g>
+        {highlighted && <circle cx={x} cy={y} r={DOT_RADIUS + 2.5} className="planting-highlight" />}
+        <circle
+          cx={x}
+          cy={y}
+          r={DOT_RADIUS}
+          className="planting-dot"
+          style={{ fill: planting.species_color }}
+          onMouseEnter={() => onHover(x, y)}
+          onMouseLeave={onHoverEnd}
+        />
+      </g>
     )
   }
 
@@ -171,18 +180,20 @@ function PlantingShape({
 
   return (
     <g>
-      <line x1={x} y1={y} x2={x2} y2={y2} className="row-guide" />
+      <line x1={x} y1={y} x2={x2} y2={y2} className={highlighted ? 'row-guide highlighted' : 'row-guide'} />
       {points.map((p, i) => (
-        <circle
-          key={i}
-          cx={p.x}
-          cy={p.y}
-          r={2}
-          className="planting-dot"
-          style={{ fill: planting.species_color }}
-          onMouseEnter={() => onHover(p.x, p.y)}
-          onMouseLeave={onHoverEnd}
-        />
+        <g key={i}>
+          {highlighted && <circle cx={p.x} cy={p.y} r={DOT_RADIUS + 2.5} className="planting-highlight" />}
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r={DOT_RADIUS}
+            className="planting-dot"
+            style={{ fill: planting.species_color }}
+            onMouseEnter={() => onHover(p.x, p.y)}
+            onMouseLeave={onHoverEnd}
+          />
+        </g>
       ))}
     </g>
   )
