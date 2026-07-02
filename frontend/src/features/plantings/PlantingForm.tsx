@@ -39,7 +39,14 @@ export function PlantingForm({ draft, species, onSubmit, onCancel }: PlantingFor
     }
     api.get<{ varieties: Variety[] }>(`/species/${speciesId}/varieties`).then((data) => setVarieties(data.varieties))
     setVarietyId('')
-  }, [speciesId])
+
+    // Podpowiadamy odstęp z biblioteki gatunku, żeby nie trzeba było go znać
+    // na pamięć - użytkownik nadal może go ręcznie zmienić.
+    const selected = species.find((s) => s.id === speciesId)
+    if (selected?.spacing_cm) {
+      setSpacingCm(String(selected.spacing_cm))
+    }
+  }, [speciesId, species])
 
   const isRowReady = draft.type === 'point' || (draft.x2 !== undefined && draft.y2 !== undefined)
 

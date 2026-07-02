@@ -16,6 +16,12 @@ export function SpeciesCard({ species, onDeleted }: SpeciesCardProps) {
   const [varieties, setVarieties] = useState<Variety[] | null>(null)
   const [isAddingVariety, setIsAddingVariety] = useState(false)
   const [varietyName, setVarietyName] = useState('')
+  // Jak przy gatunkach: zbieramy ten sam komplet pól co odmiany systemowe
+  // z migracji seed, żeby własne odmiany użytkownika nie były "uboższe".
+  const [daysToHarvestMin, setDaysToHarvestMin] = useState('')
+  const [daysToHarvestMax, setDaysToHarvestMax] = useState('')
+  const [seedSource, setSeedSource] = useState('')
+  const [description, setDescription] = useState('')
 
   function toggleExpanded() {
     const next = !expanded
@@ -35,8 +41,18 @@ export function SpeciesCard({ species, onDeleted }: SpeciesCardProps) {
     event.preventDefault()
     if (!varietyName.trim()) return
 
-    await api.post(`/species/${species.id}/varieties`, { name: varietyName.trim() })
+    await api.post(`/species/${species.id}/varieties`, {
+      name: varietyName.trim(),
+      days_to_harvest_min: daysToHarvestMin ? Number(daysToHarvestMin) : null,
+      days_to_harvest_max: daysToHarvestMax ? Number(daysToHarvestMax) : null,
+      seed_source: seedSource.trim() || null,
+      description: description.trim() || null,
+    })
     setVarietyName('')
+    setDaysToHarvestMin('')
+    setDaysToHarvestMax('')
+    setSeedSource('')
+    setDescription('')
     setIsAddingVariety(false)
     loadVarieties()
   }
@@ -105,7 +121,17 @@ export function SpeciesCard({ species, onDeleted }: SpeciesCardProps) {
           <ul className="variety-list">
             {varieties?.map((variety) => (
               <li key={variety.id}>
-                <span>{variety.name}</span>
+                <div>
+                  <span>{variety.name}</span>
+                  {(variety.days_to_harvest_min || variety.days_to_harvest_max) && (
+                    <span className="variety-detail">
+                      {' '}
+                      · zbiór po {variety.days_to_harvest_min ?? '?'}–{variety.days_to_harvest_max ?? '?'} dniach
+                    </span>
+                  )}
+                  {variety.seed_source && <span className="variety-detail"> · {variety.seed_source}</span>}
+                  {variety.description && <p className="variety-description">{variety.description}</p>}
+                </div>
                 {variety.owner_id === user?.id && (
                   <button type="button" className="danger small" onClick={() => handleDeleteVariety(variety.id)}>
                     Usuń
@@ -116,18 +142,45 @@ export function SpeciesCard({ species, onDeleted }: SpeciesCardProps) {
           </ul>
 
           {isAddingVariety ? (
-            <form onSubmit={handleAddVariety} className="inline-form">
-              <input
-                type="text"
-                placeholder="Nazwa odmiany"
-                value={varietyName}
-                onChange={(e) => setVarietyName(e.target.value)}
-                required
-              />
-              <button type="submit">Dodaj</button>
-              <button type="button" className="secondary" onClick={() => setIsAddingVariety(false)}>
-                Anuluj
-              </button>
+            <form onSubmit={handleAddVariety} className="bed-form">
+              <label>
+                Nazwa odmiany
+                <input type="text" value={varietyName} onChange={(e) => setVarietyName(e.target.value)} required />
+              </label>
+              <div className="bed-form-grid">
+                <label>
+                  Zbiór po (dni, min)
+                  <input
+                    type="number"
+                    min="0"
+                    value={daysToHarvestMin}
+                    onChange={(e) => setDaysToHarvestMin(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Zbiór po (dni, max)
+                  <input
+                    type="number"
+                    min="0"
+                    value={daysToHarvestMax}
+                    onChange={(e) => setDaysToHarvestMax(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Źródło nasion (opcjonalnie)
+                  <input type="text" value={seedSource} onChange={(e) => setSeedSource(e.target.value)} />
+                </label>
+              </div>
+              <label>
+                Opis (opcjonalnie)
+                <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} />
+              </label>
+              <div className="bed-form-actions">
+                <button type="submit">Dodaj</button>
+                <button type="button" className="secondary" onClick={() => setIsAddingVariety(false)}>
+                  Anuluj
+                </button>
+              </div>
             </form>
           ) : (
             <button type="button" className="secondary" onClick={() => setIsAddingVariety(true)}>

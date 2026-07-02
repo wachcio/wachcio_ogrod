@@ -1,5 +1,6 @@
 import { useRef, type MouseEvent } from 'react'
 import { GridLines } from '../../components/GridLines'
+import { RulerAxes } from '../../components/RulerAxes'
 import type { Bed } from '../gardens/types'
 import type { Planting, PlantingDraft } from './types'
 
@@ -52,6 +53,7 @@ export function PlantingCanvas({ bed, plantings, draft, onCanvasClick }: Plantin
     >
       <g transform={`translate(${PADDING_CM}, ${PADDING_CM})`}>
         <GridLines width={width} height={length} step={GRID_STEP_CM} />
+        <RulerAxes width={width} height={length} step={GRID_STEP_CM} />
         <rect x={0} y={0} width={width} height={length} className="bed-outline" />
         {plantings.map((planting) => (
           <PlantingShape key={planting.id} planting={planting} />
@@ -126,11 +128,20 @@ function DraftShape({ draft }: { draft: PlantingDraft }) {
     return <circle cx={draft.x} cy={draft.y} r={3} className="planting-draft" />
   }
 
+  // Długość rzędu na bieżąco, jeszcze zanim użytkownik poda odstęp w
+  // formularzu - pomaga ocenić, ile roślin się zmieści, bez liczenia kratek.
+  const rowLength = Math.hypot(draft.x2 - draft.x, draft.y2 - draft.y)
+  const midX = (draft.x + draft.x2) / 2
+  const midY = (draft.y + draft.y2) / 2
+
   return (
     <g>
       <line x1={draft.x} y1={draft.y} x2={draft.x2} y2={draft.y2} className="row-guide draft" />
       <circle cx={draft.x} cy={draft.y} r={3} className="planting-draft" />
       <circle cx={draft.x2} cy={draft.y2} r={3} className="planting-draft" />
+      <text x={midX} y={midY - 3} className="draft-length-label" textAnchor="middle">
+        {round1(rowLength)} cm
+      </text>
     </g>
   )
 }

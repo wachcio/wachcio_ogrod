@@ -43,6 +43,12 @@ Otwórz `http://localhost:5173`. Plik `.env` (hasła do bazy) już istnieje loka
 - Frontend: baner z ostrzeżeniem po dodaniu nasadzenia (możliwy do zamknięcia) + sekcja "Historia grządki" grupująca nasadzenia wg roku (`groupByYear` w `BedDetailPage.tsx`)
 - Nowa migracja `004_planting_indexes.sql` (indeks pod zapytania rotacji) — **też wymaga resetu wolumenu bazy** jak migracje z Milestone 2, jeśli baza już istnieje
 
+### Drobne usprawnienia — linijka z wymiarami i wyrównanie gatunków systemowych/własnych (commit jeszcze nie utworzony)
+- `PlantingCanvas`: dodano `RulerAxes` (`frontend/src/components/RulerAxes.tsx`) — podziałka co 25 cm wzdłuż górnej i lewej krawędzi grządki, żeby łatwiej było trafiać w konkretne miejsce podczas sadzenia bez liczenia kratek siatki. Dodatkowo podczas rysowania rzędu (przed zapisaniem) pokazuje się na bieżąco długość rzędu w cm nad prowadnicą.
+- `PlantingForm`: po wyborze gatunku pole "odstęp w rzędzie" podpowiada się z `species.spacing_cm` (wcześniej był zawsze sztywny domyślny 30 cm, niezależnie od gatunku) — nadal można je ręcznie zmienić.
+- **Naprawiony błąd**: formularze "Dodaj własny gatunek"/"Dodaj odmianę" (`SpeciesLibraryPage.tsx`, `SpeciesCard.tsx`) wysyłały do backendu tylko `name`+`color` (gatunek) / samo `name` (odmiana), mimo że backend i baza obsługują pełny komplet pól. Efekt: gatunki/odmiany systemowe (z seeda) miały komplet szczegółów (rozstaw, głębokość siewu, stanowisko, miesiące siewu/zbioru, czas do zbioru, źródło nasion, opis), a własne dodane przez użytkownika były "ubogie" — te pola zawsze wychodziły `NULL`. Teraz oba formularze zbierają ten sam komplet opcjonalnych pól co dane systemowe. Przy okazji lista odmian pokazuje też te szczegóły (wcześniej UI wyświetlał tylko nazwę odmiany, nawet dla odmian systemowych, które już miały te dane w bazie).
+- Zmiany czysto frontendowe (backend PHP już wcześniej przyjmował te pola) — nie wymaga resetu bazy ani nowej migracji.
+
 ## Do zrobienia (kolejne kamienie milowe)
 
 4. Sąsiedztwo roślin (companion planting) — ostrzeżenia o dobrym/złym sąsiedztwie
