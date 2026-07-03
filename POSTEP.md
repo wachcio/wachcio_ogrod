@@ -55,18 +55,30 @@ Otwórz `http://localhost:5173`. Plik `.env` (hasła do bazy) już istnieje loka
 - Najechanie na posadzoną roślinkę pokazuje własny dymek ze szczegółami (odmiana, rodzina botaniczna, odstęp w rzędzie, data posadzenia, notatka) zamiast wcześniejszej natywnej etykiety przeglądarki z samą nazwą gatunku.
 - Też zmiany czysto frontendowe, bez migracji.
 
-### Eksport / import danych do JSON (commit jeszcze nie utworzony w tej sesji)
+### Eksport / import danych do JSON (commit `b56a829`)
 - Nowy `GET /api/export` (`backend/src/Controllers/ExportController.php`) zwraca cały komplet danych zalogowanego użytkownika: jego ogrody → grządki → nasadzenia, oraz jego własne gatunki/odmiany (systemowych, współdzielonych `owner_id IS NULL`, celowo nie eksportujemy — odtwarzają się z seeda w każdej instalacji).
 - Nowy `POST /api/import` (`backend/src/Controllers/ImportController.php`) przyjmuje ten sam JSON i **dokłada** dane do konta aktualnie zalogowanego użytkownika w jednej transakcji PDO (pierwsze użycie transakcji w tym backendzie) — nie nadpisuje ani nie scala z istniejącymi danymi, więc powtórny import tego samego pliku podwoi dane (świadome uproszczenie, brak wykrywania duplikatów).
 - Odwołania do gatunku/odmiany przy nasadzeniu/odmianie eksportowane są jako `{kind: "owned", id}` (odtwarzane przez mapowanie starych id z pliku na nowo nadane id przy imporcie) albo `{kind: "system", name}` (odnajdywane po nazwie w bazie docelowej, bo systemowe id z seeda nie muszą się zgadzać między instalacjami) — to jedyny nietrywialny element importu.
 - Frontend: nowa strona `/dane` (`frontend/src/features/data/DataPage.tsx`, link z `GardensListPage`) — przycisk "Pobierz plik JSON" buduje Blob i pobiera plik w przeglądarce (bez zmian w `api/client.ts`, bo eksport to zwykły JSON), oraz `<input type="file">` do importu z potwierdzeniem przed wysłaniem i podsumowaniem liczby zaimportowanych rekordów.
 - Bez nowej migracji SQL — korzysta z istniejącego schematu.
 
-### Jednolite kropki, podświetlanie z historii, edycja nasadzenia (commit jeszcze nie utworzony w tej sesji)
+### Jednolite kropki, podświetlanie z historii, edycja nasadzenia (commit `21b9b87`)
 - `PlantingCanvas`: punkt i kropki rzędu mają teraz ten sam promień (`DOT_RADIUS = 2`) — wcześniej punkt (r=2.5) był zauważalnie większy niż kropki w rzędzie (r=2).
 - Najechanie myszą na pozycję w "Historia grządki" (`BedDetailPage.tsx`) podświetla odpowiadające jej nasadzenie na planie SVG (pierścień wokół kropki/pogrubiona linia rzędu, kolor `--accent`) — nowy prop `highlightedId` na `PlantingCanvas`.
 - Nowy przycisk "Edytuj" przy każdym nasadzeniu w historii otwiera `PlantingForm` w trybie edycji (nowy opcjonalny prop `initialPlanting`, ten sam formularz co przy dodawaniu — analogicznie do `BedForm`/`initialBed`). Edycja zmienia gatunek/odmianę/odstęp/datę/notatkę, ale nie geometrię (przesunięcie = usuń i dodaj ponownie, bo nie ma jeszcze przeciągania na canvasie).
 - Backend: nowy `PUT /api/plantings/{id}` (`PlantingController::update`).
+
+### Deployment: dostęp spoza localhost, restart polityki (commity `8594cde`, `60a02f5`, `efc2472`)
+- `docker-compose.yml`: `FRONTEND_ORIGIN` i `VITE_API_URL` były zahardkodowane na `localhost` — teraz konfigurowalne przez `.env` (`FRONTEND_ORIGIN`, `VITE_API_URL`, `VITE_ALLOWED_HOSTS`), z zachowaniem `localhost` jako domyślnej wartości gdy nie ustawione. Wymagane przy dostępie spoza maszyny hostującej Dockera (np. przez reverse proxy pod własną domeną) — patrz komentarze w `.env.example`.
+- `vite.config.ts`: nowy `server.allowedHosts` sterowany przez `VITE_ALLOWED_HOSTS` (Vite domyślnie blokuje nieznane nagłówki `Host` jako ochronę przed DNS rebinding).
+- `frontend` w `docker-compose.yml` dostał `restart: unless-stopped` (wcześniej brakowało, inne serwisy już to miały).
+- Poza repo: usługa systemd na hoście LXC uruchamiająca `docker compose up -d` przy starcie, żeby cały stack wstawał razem z kontenerem (nie jest częścią repo, patrz historia sesji/notatki agenta).
+
+### Edycja i usuwanie gatunków/odmian w bibliotece roślin (commit jeszcze nie utworzony w tej sesji)
+- `/species`: gatunki i odmiany własne (nie systemowe) można teraz edytować (przycisk "Edytuj gatunek"/"Edytuj" przy odmianie), nie tylko dodawać. Formularze dodawania i edycji to teraz jeden komponent każdy (`SpeciesForm.tsx`, nowy `VarietyForm.tsx`) z opcjonalnym `initialSpecies`/`initialVariety` - ten sam wzorzec co `BedForm`/`PlantingForm`. Nowe endpointy: `PUT /api/species/{id}` (już istniał) i `PUT /api/varieties/{id}` (nowy, wcześniej odmian w ogóle nie dało się edytować).
+- **Naprawiony potencjalny błąd 500**: `species_id` w `plantings` jest `NOT NULL` bez `ON DELETE CASCADE` (w przeciwieństwie do `variety_id`, które ma `ON DELETE SET NULL`) - usunięcie gatunku używanego w jakimkolwiek nasadzeniu wcześniej skutkowałoby nieobsłużonym błędem ograniczenia klucza obcego w bazie. `SpeciesController::destroy()` teraz jawnie usuwa też powiązane nasadzenia w jednej transakcji PDO.
+- Oba endpointy `index()` (species i varieties) zwracają teraz `planting_count` (podzapytanie `COUNT(*)`), żeby frontend mógł pokazać dokładny, spolszczony komunikat potwierdzenia przed usunięciem: przy gatunku "to usunie też N nasadzeń", przy odmianie "N nasadzeń straci przypisaną odmianę (sam gatunek pozostanie)" - inny komunikat, bo usunięcie odmiany nie kasuje nasadzeń, tylko czyści `variety_id`.
+- Bez nowej migracji SQL.
 - Bez nowej migracji SQL.
 
 ## Do zrobienia (kolejne kamienie milowe)

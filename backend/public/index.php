@@ -73,6 +73,7 @@ $router->delete('/species/{id}', [$species, 'destroy']);
 $varieties = new VarietyController();
 $router->get('/species/{speciesId}/varieties', [$varieties, 'index']);
 $router->post('/species/{speciesId}/varieties', [$varieties, 'create']);
+$router->put('/varieties/{id}', [$varieties, 'update']);
 $router->delete('/varieties/{id}', [$varieties, 'destroy']);
 
 $plantings = new PlantingController();

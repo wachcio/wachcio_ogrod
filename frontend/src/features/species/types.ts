@@ -23,6 +23,10 @@ export interface Species {
   harvest_start_month: number | null
   harvest_end_month: number | null
   color: string
+  // Ile nasadzeń na grządkach używa tego gatunku - usunięcie gatunku kasuje
+  // je razem z nim (species_id w plantings jest wymagane), więc UI pokazuje
+  // tę liczbę w ostrzeżeniu przed usunięciem.
+  planting_count: number
 }
 
 export interface Variety {
@@ -34,4 +38,7 @@ export interface Variety {
   days_to_harvest_max: number | null
   seed_source: string | null
   description: string | null
+  // Usunięcie odmiany NIE kasuje nasadzeń (variety_id trafia na NULL) -
+  // liczba służy tylko do dokładniejszego komunikatu przy usuwaniu.
+  planting_count: number
 }

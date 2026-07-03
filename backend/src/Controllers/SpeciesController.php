@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Auth;
 use App\Db;
+use Throwable;
 
 // Gatunki dzielą się na "systemowe" (owner_id NULL, wspólna biblioteka
 // startowa z migracji, tylko do odczytu) i "własne" użytkownika
@@ -17,8 +18,15 @@ class SpeciesController
         $userId = Auth::requireUserId();
         $db = Db::connection();
 
+        // planting_count - ile nasadzeń na grządkach używa tego gatunku - żeby
+        // frontend mógł pokazać ostrzeżenie przed usunięciem, ile nasadzeń
+        // zniknie razem z gatunkiem (species_id w plantings jest NOT NULL,
+        // więc usunięcie gatunku zawsze kasuje też te nasadzenia - patrz destroy()).
         $stmt = $db->prepare(
-            'SELECT * FROM plant_species WHERE owner_id IS NULL OR owner_id = ? ORDER BY name'
+            'SELECT s.*, (SELECT COUNT(*) FROM plantings p WHERE p.species_id = s.id) AS planting_count
+             FROM plant_species s
+             WHERE s.owner_id IS NULL OR s.owner_id = ?
+             ORDER BY s.name'
         );
         $stmt->execute([$userId]);
 
@@ -119,6 +127,11 @@ class SpeciesController
         echo json_encode(['species' => $stmt->fetch()]);
     }
 
+    // species_id w plantings jest NOT NULL bez ON DELETE CASCADE (w
+    // odróżnieniu od variety_id, które ma ON DELETE SET NULL) - nasadzenie
+    // bez gatunku nie ma sensu, więc usunięcie gatunku świadomie kasuje też
+    // wszystkie nasadzenia, które go używały (frontend ostrzega o tym przed
+    // wysłaniem żądania, korzystając z planting_count z index()).
     public function destroy(array $params): void
     {
         $userId = Auth::requireUserId();
@@ -131,10 +144,25 @@ class SpeciesController
         }
 
         $db = Db::connection();
-        $stmt = $db->prepare('DELETE FROM plant_species WHERE id = ?');
-        $stmt->execute([$species['id']]);
+        $db->beginTransaction();
 
-        echo json_encode(['success' => true]);
+        try {
+            $stmt = $db->prepare('DELETE FROM plantings WHERE species_id = ?');
+            $stmt->execute([$species['id']]);
+            $deletedPlantings = $stmt->rowCount();
+
+            $stmt = $db->prepare('DELETE FROM plant_species WHERE id = ?');
+            $stmt->execute([$species['id']]);
+
+            $db->commit();
+        } catch (Throwable) {
+            $db->rollBack();
+            http_response_code(500);
+            echo json_encode(['error' => 'Nie udało się usunąć gatunku']);
+            return;
+        }
+
+        echo json_encode(['success' => true, 'deleted_plantings' => $deletedPlantings]);
     }
 
     // Gatunki systemowe (owner_id NULL) nigdy nie są "moje" - może je

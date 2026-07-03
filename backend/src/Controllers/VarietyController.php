@@ -14,9 +14,16 @@ class VarietyController
         $userId = Auth::requireUserId();
         $speciesId = (int) $params['speciesId'];
 
+        // planting_count - w odróżnieniu od gatunku, usunięcie odmiany NIE
+        // kasuje nasadzeń (variety_id ma ON DELETE SET NULL) - liczba służy
+        // tylko do dokładniejszego komunikatu przy usuwaniu ("N nasadzeń
+        // straci przypisaną odmianę").
         $db = Db::connection();
         $stmt = $db->prepare(
-            'SELECT * FROM plant_varieties WHERE species_id = ? AND (owner_id IS NULL OR owner_id = ?) ORDER BY name'
+            'SELECT v.*, (SELECT COUNT(*) FROM plantings p WHERE p.variety_id = v.id) AS planting_count
+             FROM plant_varieties v
+             WHERE v.species_id = ? AND (v.owner_id IS NULL OR v.owner_id = ?)
+             ORDER BY v.name'
         );
         $stmt->execute([$speciesId, $userId]);
 
@@ -65,6 +72,40 @@ class VarietyController
         $stmt->execute([$id]);
 
         http_response_code(201);
+        echo json_encode(['variety' => $stmt->fetch()]);
+    }
+
+    public function update(array $params): void
+    {
+        $userId = Auth::requireUserId();
+        $variety = $this->findOwnedVariety((int) $params['id'], $userId);
+
+        if (!$variety) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Nie znaleziono odmiany lub nie masz do niej uprawnień']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+        $name = trim((string) ($data['name'] ?? $variety['name']));
+
+        $db = Db::connection();
+        $stmt = $db->prepare(
+            'UPDATE plant_varieties SET name = ?, days_to_harvest_min = ?, days_to_harvest_max = ?, seed_source = ?, description = ?
+             WHERE id = ?'
+        );
+        $stmt->execute([
+            $name,
+            $data['days_to_harvest_min'] ?? $variety['days_to_harvest_min'],
+            $data['days_to_harvest_max'] ?? $variety['days_to_harvest_max'],
+            $data['seed_source'] ?? $variety['seed_source'],
+            $data['description'] ?? $variety['description'],
+            $variety['id'],
+        ]);
+
+        $stmt = $db->prepare('SELECT * FROM plant_varieties WHERE id = ?');
+        $stmt->execute([$variety['id']]);
+
         echo json_encode(['variety' => $stmt->fetch()]);
     }
 

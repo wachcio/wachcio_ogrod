@@ -375,6 +375,12 @@ button.small {
   color: #6b6b5c;
 }
 
+.variety-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 /* Sadzenie roślin na grządce */
 .planting-toolbar {
   display: flex;
